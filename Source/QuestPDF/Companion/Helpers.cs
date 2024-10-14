@@ -1,11 +1,10 @@
+using QuestPDF.Drawing.Proxy;
+using QuestPDF.Elements;
+using QuestPDF.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using QuestPDF.Drawing.Proxy;
-using QuestPDF.Elements;
-using QuestPDF.Helpers;
-using QuestPDF.Infrastructure;
 
 namespace QuestPDF.Companion;
 
@@ -15,7 +14,7 @@ internal static class CompanionModelHelpers
     {
         var layoutTree = container.ExtractElementsOfType<LayoutProxy>().Single();
         return Traverse(layoutTree);
-        
+
         CompanionCommands.UpdateDocumentStructure.DocumentHierarchyElement Traverse(TreeNode<LayoutProxy> node)
         {
             var layout = node.Value;
@@ -26,22 +25,22 @@ internal static class CompanionModelHelpers
 
             if (child is Container)
                 return Traverse(node.Children.Single());
-            
+
             var element = new CompanionCommands.UpdateDocumentStructure.DocumentHierarchyElement
             {
                 Element = child,
-                
+
                 ElementType = child.GetType().Name,
                 Hint = child.GetCompanionHint(),
                 SearchableContent = child.GetCompanionSearchableContent(),
-                
+
                 PageLocations = layout.Snapshots,
                 SourceCodeDeclarationPath = GetSourceCodePath(child.CodeLocation),
                 LayoutErrorMeasurements = layout.LayoutErrorMeasurements,
-                
+
                 IsSingleChildContainer = child is ContainerElement,
                 Properties = child.GetCompanionProperties()?.Select(x => new CompanionCommands.ElementProperty { Label = x.Key, Value = x.Value }).ToList() ?? [],
-                
+
                 Children = node.Children.Select(Traverse).ToList()
             };
 
@@ -53,26 +52,38 @@ internal static class CompanionModelHelpers
     {
         if (path == null)
             return null;
-        
+
         return new CompanionCommands.UpdateDocumentStructure.SourceCodePath
         {
             FilePath = path.Value.FilePath,
             LineNumber = path.Value.LineNumber
         };
     }
-    
-    #if NET6_0_OR_GREATER
-    
+
+#if NET6_0_OR_GREATER
+
+    private static Match LineFullMatch(this string line)
+    {
+        return Regex.Match(line, @"at\s+(?<codeLocation>.+)\s+in\s(?<fileName>.+)\s*:line\s(?<lineNumber>\d+)", RegexOptions.Compiled);
+    }
+    private static Match CodeOnlyMatch(this string line)
+    {
+        return Regex.Match(line, @"at\s+(?<codeLocation>.+)", RegexOptions.Compiled);
+    }
+
+
     internal static CompanionCommands.ShowGenericException.StackFrame[] ParseStackTrace(this string stackTrace)
     {
         var lines = stackTrace.Split([Environment.NewLine], StringSplitOptions.RemoveEmptyEntries);
-        
+
         var frames = new List<CompanionCommands.ShowGenericException.StackFrame>();
 
         foreach (string line in lines)
         {
-            var fullMatch = Regex.Match(line, @"at\s+(?<codeLocation>.+)\s+in\s(?<fileName>.+)\s*:line\s(?<lineNumber>\d+)");
-            var codeOnlyMatch = Regex.Match(line, @"at\s+(?<codeLocation>.+)");
+            var fullMatch = LineFullMatch(line);
+            var codeOnlyMatch = CodeOnlyMatch(line);
+
+            if (!fullMatch.Success && !codeOnlyMatch.Success) continue;
 
             if (fullMatch.Success)
             {
@@ -82,21 +93,21 @@ internal static class CompanionModelHelpers
                     FileName = fullMatch.Groups["fileName"].Value,
                     LineNumber = int.Parse(fullMatch.Groups["lineNumber"].Value)
                 });
+
+                continue;
             }
-            else if (codeOnlyMatch.Success)
+
+            frames.Add(new CompanionCommands.ShowGenericException.StackFrame
             {
-                frames.Add(new CompanionCommands.ShowGenericException.StackFrame
-                {
-                    CodeLocation = codeOnlyMatch.Groups["codeLocation"].Value
-                });
-            }
+                CodeLocation = codeOnlyMatch.Groups["codeLocation"].Value
+            });
         }
 
         return frames.ToArray();
     }
 
-    #endif
-    
+#endif
+
     internal static CompanionCommands.UpdateDocumentStructure.DocumentHierarchyElement ImproveHierarchyStructure(this CompanionCommands.UpdateDocumentStructure.DocumentHierarchyElement root)
     {
         var document = FindDocumentStructurePointersThat(root, x => x == DocumentStructureTypes.Document).Single();
@@ -109,7 +120,7 @@ internal static class CompanionModelHelpers
             page.IsSingleChildContainer = false;
             page.Children = FindDocumentStructurePointersThat(page, x => x is not (DocumentStructureTypes.Document or DocumentStructureTypes.Page)).ToList();
         }
-        
+
         document.Children = pages;
 
         if (pages.Count == 1)
@@ -130,7 +141,7 @@ internal static class CompanionModelHelpers
                     result.Add(element);
                     return;
                 }
-                
+
                 foreach (var child in element.Children)
                     Traverse(child);
             }

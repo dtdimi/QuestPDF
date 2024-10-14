@@ -23,7 +23,8 @@ namespace QuestPDF.Helpers
             using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(resourceName);
             using var reader = new BinaryReader(stream);
             
-            return reader.ReadBytes((int) stream.Length);
+            // ----- DTD: check for missing resource.
+            return stream.Length > 0 ? reader.ReadBytes((int) stream.Length) : Array.Empty<byte>();
         }
         
         private static PropertyInfo? ToPropertyInfo<T, TValue>(this Expression<Func<T, TValue>> selector)
@@ -120,7 +121,8 @@ namespace QuestPDF.Helpers
         
         internal static void OpenFileUsingDefaultProgram(string filePath)
         {
-            var process = new Process
+            // ----- DTD: added using
+            using var process = new Process
             {
                 StartInfo = new ProcessStartInfo(filePath)
                 {
@@ -160,6 +162,7 @@ namespace QuestPDF.Helpers
                 // in CSS dpi is set to 96, but Skia uses more traditional 90
                 const float PointToPixel = 90f / 72;
         
+                // ----- DTD: streamlined OurOfRangeException usage.
                 var points =  unit switch
                 {
                     Centimeters => value / InchToCentimetre * InchToPoints,
@@ -167,7 +170,7 @@ namespace QuestPDF.Helpers
                     Inches => value * InchToPoints,
                     Points => value,
                     Picas => value * 12,
-                    _ => throw new ArgumentOutOfRangeException()
+                    _ => throw new ArgumentOutOfRangeException(nameof(unit), unit, null)
                 };
         
                 // different naming schema: SVG pixel = PDF point
