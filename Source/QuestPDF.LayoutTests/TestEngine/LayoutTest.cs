@@ -8,7 +8,7 @@ namespace QuestPDF.LayoutTests.TestEngine;
 
 internal sealed class LayoutTest
 {
-    private string TestIdentifier { get; set; }
+    private string TestIdentifier { get; set; } = string.Empty;
     private LayoutTestResult TestResult { get; } = new LayoutTestResult();
   
     public static LayoutTest HavingSpaceOfSize(float width, float height, [CallerMemberName] string testIdentifier = "test")

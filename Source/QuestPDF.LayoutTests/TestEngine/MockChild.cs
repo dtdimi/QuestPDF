@@ -6,7 +6,7 @@ namespace QuestPDF.LayoutTests.TestEngine;
 
 internal class MockDrawingCommand
 {
-    public string MockId { get; set; }
+    public string MockId { get; set; } = string.Empty;
     public int PageNumber { get; set; }
     public Position Position { get; set; }
     public Size Size { get; set; }
@@ -14,7 +14,7 @@ internal class MockDrawingCommand
 
 internal class ElementMock : Element
 {
-    public string MockId { get; set; }
+    public string MockId { get; set; } = string.Empty;
     
     public float TotalWidth { get; set; }
     public float TotalHeight { get; set; }

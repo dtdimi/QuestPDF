@@ -4,28 +4,28 @@ namespace QuestPDF.LayoutTests.TestEngine;
 
 internal sealed class LayoutTestResult
 {
-    public Size PageSize { get; set; }
-    
-    public DocumentLayout ActualLayout { get; set; }
-    public DocumentLayout ExpectedLayout { get; set; }
+    public Size PageSize { get; set; } = new();
+
+    public DocumentLayout ActualLayout { get; set; } = new();
+    public DocumentLayout ExpectedLayout { get; set; } = new();
 
     public sealed class DocumentLayout
     {
-        public ICollection<PageLayout> Pages { get; set; } = new List<PageLayout>();
-        public bool GeneratesInfiniteLayout { get; set; }
+        public ICollection<PageLayout> Pages { get; set; } = [];
+        public bool GeneratesInfiniteLayout { get; set; } = new();
     }
-    
+
     public sealed class PageLayout
     {
-        public Size RequiredArea { get; set; }
-        public ICollection<MockLayoutPosition> Mocks { get; set; }
+        public Size RequiredArea { get; set; } = new();
+        public ICollection<MockLayoutPosition> Mocks { get; set; } = [];
     }
 
     public sealed class MockLayoutPosition
     {
-        public string MockId { get; set; }
-        public Position Position { get; set; }
-        public Size Size { get; set; }
+        public string MockId { get; set; } = string.Empty;
+        public Position Position { get; set; } = new();
+        public Size Size { get; set; } = new();
     }
 }
 
@@ -44,7 +44,7 @@ internal static class LayoutTestResultHelpers
                 var afterBoundingBox = BoundingBox.From(afterChild.Position, afterChild.Size);
 
                 var intersection = BoundingBoxExtensions.Intersection(beforeBoundingBox, afterBoundingBox);
-                        
+
                 if (intersection == null)
                     continue;
 
